@@ -4,6 +4,7 @@ const session = require('express-session');
 require('dotenv').config();
 
 const { connectDatabase } = require('./config/database');
+const errorHandler = require('./middleware/error-handler');
 const logger = require('./utils/logger');
 
 const app = express();
@@ -22,6 +23,8 @@ app.use(session({
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 
