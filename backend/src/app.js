@@ -7,6 +7,8 @@ const { connectDatabase } = require('./config/database');
 const errorHandler = require('./middleware/error-handler');
 const logger = require('./utils/logger');
 
+const authRoutes = require('./routes/auth.routes');
+
 const app = express();
 
 app.use(cors({
@@ -19,6 +21,8 @@ app.use(session({
   resave: false,
   saveUninitialized: false
 }));
+
+app.use('/api/auth', authRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
