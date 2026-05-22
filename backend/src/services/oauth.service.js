@@ -42,14 +42,17 @@ async function exchangeCodeForTokens(code, state) {
     `${process.env.AIRTABLE_CLIENT_ID}:${process.env.AIRTABLE_CLIENT_SECRET}`
   ).toString('base64');
 
-  const response = await axios.post(AIRTABLE_TOKEN_URL, {
+  // Airtable token endpoint requires form-urlencoded, not JSON
+  const body = new URLSearchParams({
     grant_type: 'authorization_code',
     code,
     redirect_uri: process.env.AIRTABLE_REDIRECT_URI,
     code_verifier: pending.codeVerifier
-  }, {
+  });
+
+  const response = await axios.post(AIRTABLE_TOKEN_URL, body.toString(), {
     headers: {
-      'Content-Type': 'application/json',
+      'Content-Type': 'application/x-www-form-urlencoded',
       Authorization: `Basic ${credentials}`
     }
   });
@@ -94,12 +97,14 @@ async function refreshAccessToken(tokenDoc) {
   ).toString('base64');
 
   try {
-    const response = await axios.post(AIRTABLE_TOKEN_URL, {
+    const body = new URLSearchParams({
       grant_type: 'refresh_token',
       refresh_token: tokenDoc.refreshToken
-    }, {
+    });
+
+    const response = await axios.post(AIRTABLE_TOKEN_URL, body.toString(), {
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
         Authorization: `Basic ${credentials}`
       }
     });
