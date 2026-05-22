@@ -7,7 +7,7 @@ A full-stack integration with Airtable that covers three areas:
 - **OAuth2 + PKCE authentication** — connects to Airtable's API, stores and auto-refreshes tokens
 - **REST API data sync** — fetches bases, tables, records, and users with proper pagination handling
 - **Custom scraper** — uses Puppeteer to authenticate into Airtable's web UI, extracts session cookies, and pulls revision history from their internal endpoint
-- **Angular dashboard** — AG Grid-powered data viewer with dynamic columns, search, filter, sort, and pagination
+- **Angular dashboard** — AG Grid + AG Charts powered data viewer with dynamic columns, search, filter, sort, and pagination
 
 ## Tech Stack
 
@@ -18,7 +18,7 @@ A full-stack integration with Airtable that covers three areas:
 ## Prerequisites
 
 - Node.js 22+
-- MongoDB 7+ running locally
+- MongoDB 7+ running locally on default port (27017)
 - An Airtable account with at least one base
 - An Airtable OAuth integration (see setup below)
 
@@ -37,27 +37,66 @@ A full-stack integration with Airtable that covers three areas:
 ```bash
 cd backend
 npm install
+```
+
+Copy `.env.example` to `.env` and fill in your Airtable credentials:
+
+```bash
+# macOS/Linux
 cp .env.example .env
-# Fill in your Airtable credentials in .env
+
+# Windows
+copy .env.example .env
+```
+
+Then start the server:
+
+```bash
 npm run dev
 ```
+
+The backend will start on **http://localhost:3000**. You should see `Connected to MongoDB` and `Server running on http://localhost:3000` in the console.
 
 ### 3. Frontend
 
 ```bash
 cd frontend
 npm install
-ng serve
+npm start
 ```
 
-### 4. Open http://localhost:4200
+The frontend will start on **http://localhost:4200** and open automatically.
+
+### 4. Verify
+
+- Backend health check: open http://localhost:3000/api/health — should return `{"status":"ok"}`
+- Frontend: open http://localhost:4200 — you should see the dashboard with a "Connect Airtable" button
 
 ## Usage
 
-1. Click **Connect Airtable** to authorize via OAuth
-2. Click **Sync Data** to fetch bases, tables, records, and users
-3. Click **Start Scraper** to enter Airtable credentials + MFA, which extracts session cookies and fetches revision history
-4. Select an entity from the dropdown to view data in AG Grid
+1. Click **Connect Airtable** — redirects to Airtable's OAuth consent screen, then back to the dashboard
+2. Click **Sync Data** — fetches all bases, tables, records, and users from your Airtable account
+3. Select a collection from the **Entity** dropdown — AG Grid populates with dynamic columns from that collection
+4. Use **Search**, column **filters**, and **sorting** to explore the data
+5. Click **Start Scraper** — prompts for Airtable login credentials (+ MFA if enabled), extracts session cookies, and fetches revision history for status/assignee changes
+
+## API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/health` | Health check |
+| GET | `/api/auth/connect` | Start OAuth flow |
+| GET | `/api/auth/callback` | OAuth callback |
+| GET | `/api/auth/status` | Check connection status |
+| POST | `/api/sync` | Trigger full data sync |
+| GET | `/api/sync/status` | Sync progress |
+| GET | `/api/data/collections` | List MongoDB collections |
+| GET | `/api/data/collections/:name` | Get collection data (flattened for AG Grid) |
+| POST | `/api/scraper/login` | Start Puppeteer login |
+| POST | `/api/scraper/mfa` | Submit MFA code |
+| GET | `/api/scraper/cookies/status` | Check cookie validity |
+| POST | `/api/scraper/scrape` | Start revision history scrape |
+| GET | `/api/scraper/scrape/status` | Scrape progress |
 
 ## Architecture Decisions
 
