@@ -40,12 +40,15 @@ router.get('/cookies/status', async (req, res) => {
 router.post('/scrape', async (req, res) => {
   const { baseId, tableId } = req.body;
 
-  // Return immediately, run in background
   res.json({ message: 'Scraping started', status: 'in_progress' });
 
   revisionService.scrapeAllRevisionHistory({ baseId, tableId })
     .then(stats => console.log('[scraper] Scrape complete:', JSON.stringify(stats)))
     .catch(err => console.error('[scraper] Scrape failed:', err.message));
+});
+
+router.get('/scrape/status', (req, res) => {
+  res.json(revisionService.getScrapeStatus());
 });
 
 module.exports = router;

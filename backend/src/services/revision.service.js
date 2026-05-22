@@ -6,6 +6,12 @@ const RevisionHistory = require('../models/RevisionHistory');
 const { delay } = require('../utils/pagination');
 const logger = require('../utils/logger');
 
+let scrapeStatus = { inProgress: false, stats: null };
+
+function getScrapeStatus() {
+  return { ...scrapeStatus, stats: scrapeStatus.stats ? { ...scrapeStatus.stats } : null };
+}
+
 async function scrapeAllRevisionHistory(options = {}) {
   const { baseId, tableId } = options;
 
@@ -22,6 +28,7 @@ async function scrapeAllRevisionHistory(options = {}) {
   logger.info(`Starting revision history scrape for ${pages.length} pages`);
 
   const stats = { total: pages.length, processed: 0, changesFound: 0, errors: 0 };
+  scrapeStatus = { inProgress: true, stats };
   const cookieString = await scraperService.getCookieString();
 
   for (let i = 0; i < pages.length; i++) {
@@ -73,6 +80,7 @@ async function scrapeAllRevisionHistory(options = {}) {
     }
   }
 
+  scrapeStatus = { inProgress: false, stats };
   logger.info('Revision scrape complete');
   return stats;
 }
@@ -100,4 +108,4 @@ async function fetchRevisionHtml(cookieString, recordId, tableId) {
   }
 }
 
-module.exports = { scrapeAllRevisionHistory };
+module.exports = { scrapeAllRevisionHistory, getScrapeStatus };

@@ -36,7 +36,7 @@ function parseJsonResponse(data, ticketId) {
       if (columnType === 'status' || columnType === 'assignee') {
         const actId = activity.id || activity.activityId || generateId();
         changes.push({
-          uuid: `${actId}-${columnType}`,
+          uuid: actId,
           issueId: ticketId,
           columnType,
           oldValue: stringifyValue(fc.oldValue || fc.previousValue),
@@ -70,7 +70,7 @@ function parseHtmlResponse(html, ticketId) {
       if (columnType !== 'status' && columnType !== 'assignee') return;
 
       changes.push({
-        uuid: `${activityId}-${columnType}`,
+        uuid: activityId,
         issueId: ticketId,
         columnType,
         oldValue: $change.find('.old-value, .previous-value').text().trim(),
