@@ -6,7 +6,7 @@ const cheerio = require('cheerio');
  * so we handle both. Only status and assignee changes are kept.
  */
 function parseRevisionHtml(htmlOrJson, ticketId) {
-  if (typeof htmlOrJson === 'object') {
+  if (htmlOrJson && typeof htmlOrJson === 'object') {
     return parseJsonResponse(htmlOrJson, ticketId);
   }
 
