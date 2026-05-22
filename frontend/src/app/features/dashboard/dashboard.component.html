@@ -1,9 +1,11 @@
-<mat-toolbar color="primary">
-  <span>Raw Data</span>
+<mat-toolbar color="primary" class="top-toolbar">
+  <div class="toolbar-tabs">
+    <span class="tab active">Raw Data</span>
+  </div>
   <span class="spacer"></span>
-  <span>SRED.io — Airtable Integration</span>
+  <span class="app-title">SRED.io — Airtable Integration</span>
   <span class="spacer"></span>
-  <span>Raw Data Logs</span>
+  <span class="tab">Raw Data Logs</span>
 </mat-toolbar>
 
 <div class="dashboard-container">
@@ -51,6 +53,14 @@
         </mat-select>
       </mat-form-field>
 
+      <mat-form-field appearance="outline">
+        <mat-label>Processed Entity</mat-label>
+        <mat-select [(value)]="processedEntity">
+          <mat-option value="">—</mat-option>
+          <mat-option *ngFor="let col of collections" [value]="col">{{ col }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
       <mat-form-field appearance="outline" class="search-field">
         <mat-label>Search</mat-label>
         <input matInput [(ngModel)]="searchTerm" (ngModelChange)="onSearch()" placeholder="Search keyword...">
@@ -58,6 +68,17 @@
       </mat-form-field>
     </div>
   </mat-card>
+
+  <!-- Chart (AG Charts) -->
+  <div class="chart-container" *ngIf="showChart && rowData.length > 0">
+    <div class="chart-header">
+      <span>Record Distribution</span>
+      <button mat-icon-button (click)="toggleChart()" matTooltip="Toggle chart">
+        <mat-icon>{{ showChart ? 'expand_less' : 'bar_chart' }}</mat-icon>
+      </button>
+    </div>
+    <ag-charts [options]="chartOptions" style="height: 250px;"></ag-charts>
+  </div>
 
   <!-- AG Grid -->
   <div class="grid-container" *ngIf="selectedCollection">
@@ -71,11 +92,16 @@
       [defaultColDef]="defaultColDef"
       [pagination]="true"
       [paginationPageSize]="paginationPageSize"
-      [rowSelection]="'multiple'"
+      [rowSelection]="rowSelection"
       [animateRows]="true"
       (gridReady)="onGridReady($event)"
+      (selectionChanged)="onSelectionChanged($event)"
       style="width: 100%; height: 600px;">
     </ag-grid-angular>
+
+    <div class="grid-footer" *ngIf="!isLoading && rowData.length > 0">
+      <span class="row-count">Rows Selected: {{ selectedRowCount }}</span>
+    </div>
   </div>
 
   <!-- Empty state -->

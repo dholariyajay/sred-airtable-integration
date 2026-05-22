@@ -12,9 +12,13 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatTabsModule } from '@angular/material/tabs';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { AgGridModule } from 'ag-grid-angular';
-import { ColDef, GridApi, GridReadyEvent, ModuleRegistry, AllCommunityModule } from 'ag-grid-community';
+import { ColDef, GridApi, GridReadyEvent, ModuleRegistry, AllCommunityModule, SelectionChangedEvent } from 'ag-grid-community';
+import { AgCharts } from 'ag-charts-angular';
+import { AgChartOptions } from 'ag-charts-community';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -30,8 +34,9 @@ import { MfaDialogComponent } from '../mfa-dialog/mfa-dialog.component';
     MatSelectModule, MatFormFieldModule, MatInputModule,
     MatButtonModule, MatIconModule, MatCardModule,
     MatSnackBarModule, MatProgressSpinnerModule,
-    MatDialogModule, MatToolbarModule,
-    AgGridModule
+    MatDialogModule, MatToolbarModule, MatTabsModule,
+    MatTooltipModule,
+    AgGridModule, AgCharts
   ],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss']
@@ -40,11 +45,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
   activeIntegration = 'airtable';
   collections: string[] = [];
   selectedCollection = '';
+  processedEntity = '';
   searchTerm = '';
+  selectedRowCount = 0;
 
   isConnected = false;
   isSyncing = false;
   isLoading = false;
+  showChart = false;
+
+  chartOptions: AgChartOptions = {};
 
   private gridApi!: GridApi;
   private syncInterval: ReturnType<typeof setInterval> | null = null;
@@ -58,6 +68,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
     minWidth: 120
   };
   paginationPageSize = 100;
+  rowSelection: any = {
+    mode: 'multiRow',
+    checkboxes: true,
+    headerCheckbox: true
+  };
 
   constructor(
     private api: ApiService,
@@ -135,10 +150,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (!this.selectedCollection) return;
 
     this.isLoading = true;
+    this.showChart = false;
+    this.selectedRowCount = 0;
     this.api.getCollectionData(this.selectedCollection).subscribe({
       next: (data) => {
         this.rowData = data;
         this.buildColumnDefs(data);
+        this.buildChartOptions(data);
         this.isLoading = false;
         if (data.length === 0) {
           this.notify.info('Collection is empty — try syncing first');
@@ -159,19 +177,56 @@ export class DashboardComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Sample first 10 records to catch all possible fields
     const keys = new Set<string>();
-    data.slice(0, 10).forEach(record => {
+    data.forEach(record => {
       Object.keys(record).forEach(k => keys.add(k));
     });
 
-    this.columnDefs = Array.from(keys).map(key => ({
+    const dataCols: ColDef[] = Array.from(keys).map(key => ({
       field: key,
       headerName: this.formatHeader(key),
       filter: this.isDateField(key) ? 'agDateColumnFilter' : true,
       sortable: true,
       resizable: true
     }));
+
+    const indexCol: ColDef = {
+      headerName: '#',
+      valueGetter: (params: any) => params.node ? params.node.rowIndex + 1 : '',
+      width: 70,
+      maxWidth: 80,
+      sortable: false,
+      filter: false,
+      pinned: 'left',
+      suppressMovable: true
+    };
+
+    this.columnDefs = [indexCol, ...dataCols];
+  }
+
+  private buildChartOptions(data: any[]): void {
+    if (data.length === 0) return;
+
+    const sample = data.slice(0, 20);
+    const dateKey = Object.keys(sample[0]).find(k => this.isDateField(k));
+
+    if (dateKey) {
+      const grouped: Record<string, number> = {};
+      sample.forEach(row => {
+        const val = row[dateKey];
+        if (val) {
+          const d = new Date(val);
+          const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          grouped[label] = (grouped[label] || 0) + 1;
+        }
+      });
+
+      this.chartOptions = {
+        data: Object.entries(grouped).map(([label, count]) => ({ label, count })),
+        series: [{ type: 'bar', xKey: 'label', yKey: 'count', yName: 'Records' }]
+      };
+      this.showChart = true;
+    }
   }
 
   onSearch(): void {
@@ -180,9 +235,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
   }
 
+  onSelectionChanged(event: SelectionChangedEvent): void {
+    this.selectedRowCount = event.api.getSelectedRows().length;
+  }
+
   onGridReady(event: GridReadyEvent): void {
     this.gridApi = event.api;
     this.gridApi.sizeColumnsToFit();
+    if (this.searchTerm) {
+      this.gridApi.setGridOption('quickFilterText', this.searchTerm);
+    }
   }
 
   // --- Scraper ---
@@ -225,6 +287,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
         }
       });
     });
+  }
+
+  toggleChart(): void {
+    this.showChart = !this.showChart;
   }
 
   private formatHeader(key: string): string {
