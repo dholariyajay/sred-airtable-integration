@@ -11,7 +11,7 @@ A full-stack integration with Airtable that covers three areas:
 
 ## Tech Stack
 
-- **Frontend:** Angular 19, AG Grid 33.0, Angular Material
+- **Frontend:** Angular 19, AG Grid 33.0, AG Charts, Angular Material
 - **Backend:** Node.js 22, Express, Mongoose
 - **Database:** MongoDB
 
