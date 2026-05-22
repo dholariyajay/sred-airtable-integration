@@ -8,6 +8,7 @@ const errorHandler = require('./middleware/error-handler');
 const logger = require('./utils/logger');
 
 const authRoutes = require('./routes/auth.routes');
+const syncRoutes = require('./routes/sync.routes');
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.use(session({
 }));
 
 app.use('/api/auth', authRoutes);
+app.use('/api', syncRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
