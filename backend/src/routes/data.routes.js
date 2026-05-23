@@ -19,6 +19,7 @@ router.get('/collections/:name', async (req, res) => {
     const { name } = req.params;
     const db = mongoose.connection.db;
 
+    // Verify collection exists
     const existing = await db.listCollections({ name }).toArray();
     if (existing.length === 0) {
       return res.status(404).json({ error: `Collection "${name}" not found` });
@@ -26,12 +27,28 @@ router.get('/collections/:name', async (req, res) => {
 
     const documents = await db.collection(name).find({}).limit(10000).toArray();
 
-    const formatted = documents.map(doc => ({
-      ...doc,
-      _id: doc._id.toString()
-    }));
+    // Flatten for AG Grid — _id to string, nested fields to top-level keys
+    const flattened = documents.map(doc => {
+      const flat = { ...doc };
+      if (flat._id) flat._id = flat._id.toString();
 
-    res.json(formatted);
+      // Flatten nested 'fields' object so each field becomes a column in AG Grid
+      if (flat.fields && typeof flat.fields === 'object') {
+        Object.entries(flat.fields).forEach(([key, value]) => {
+          if (Array.isArray(value)) {
+            flat[key] = value.map(v => typeof v === 'object' ? (v.name || v.email || JSON.stringify(v)) : v).join(', ');
+          } else if (value && typeof value === 'object') {
+            flat[key] = value.name || value.email || JSON.stringify(value);
+          } else {
+            flat[key] = value;
+          }
+        });
+        delete flat.fields;
+      }
+      return flat;
+    });
+
+    res.json(flattened);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
