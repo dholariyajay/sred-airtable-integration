@@ -1,0 +1,17 @@
+<div class="connect-container">
+  <mat-card class="connect-card">
+    <mat-card-header>
+      <mat-card-title>Connect to Airtable</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <p>Authorize this application to access your Airtable data via OAuth2.</p>
+      <button mat-raised-button color="primary" (click)="connect()" *ngIf="!isConnected">
+        <mat-icon>link</mat-icon>
+        Connect Airtable
+      </button>
+      <p *ngIf="isConnected" class="status-connected">
+        <mat-icon>check_circle</mat-icon> Connected — redirecting to dashboard...
+      </p>
+    </mat-card-content>
+  </mat-card>
+</div>
