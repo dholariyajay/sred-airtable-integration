@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
@@ -18,8 +20,8 @@ import { ApiService } from '../../core/services/api.service';
   selector: 'app-dashboard',
   standalone: true,
   imports: [
-    CommonModule,
-    MatSelectModule, MatFormFieldModule,
+    CommonModule, FormsModule,
+    MatSelectModule, MatFormFieldModule, MatInputModule,
     MatButtonModule, MatIconModule, MatCardModule,
     MatSnackBarModule, MatProgressSpinnerModule,
     MatToolbarModule,
@@ -32,6 +34,7 @@ export class DashboardComponent implements OnInit {
   activeIntegration = 'airtable';
   collections: string[] = [];
   selectedCollection = '';
+  searchTerm = '';
 
   isConnected = false;
   isSyncing = false;
@@ -143,6 +146,12 @@ export class DashboardComponent implements OnInit {
       sortable: true,
       resizable: true
     }));
+  }
+
+  onSearch(): void {
+    if (this.gridApi) {
+      this.gridApi.setGridOption('quickFilterText', this.searchTerm);
+    }
   }
 
   onGridReady(event: GridReadyEvent): void {

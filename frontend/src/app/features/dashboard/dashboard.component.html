@@ -44,6 +44,12 @@
           <mat-option *ngFor="let col of collections" [value]="col">{{ col }}</mat-option>
         </mat-select>
       </mat-form-field>
+
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>Search</mat-label>
+        <input matInput [(ngModel)]="searchTerm" (ngModelChange)="onSearch()" placeholder="Search keyword...">
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
     </div>
   </mat-card>
 
