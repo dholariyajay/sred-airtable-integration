@@ -9,6 +9,7 @@ const logger = require('./utils/logger');
 
 const authRoutes = require('./routes/auth.routes');
 const syncRoutes = require('./routes/sync.routes');
+const scraperRoutes = require('./routes/scraper.routes');
 const dataRoutes = require('./routes/data.routes');
 
 const app = express();
@@ -26,6 +27,7 @@ app.use(session({
 
 app.use('/api/auth', authRoutes);
 app.use('/api', syncRoutes);
+app.use('/api/scraper', scraperRoutes);
 app.use('/api/data', dataRoutes);
 
 app.get('/api/health', (req, res) => {
