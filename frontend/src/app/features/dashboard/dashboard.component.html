@@ -82,5 +82,6 @@
   <div class="empty-state" *ngIf="!selectedCollection && isConnected">
     <mat-icon>table_chart</mat-icon>
     <p>Select an entity from the dropdown to view data</p>
+    <p class="hint" *ngIf="collections.length === 0">No data available — sync first</p>
   </div>
 </div>

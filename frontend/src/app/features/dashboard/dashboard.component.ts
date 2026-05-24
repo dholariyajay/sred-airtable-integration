@@ -121,6 +121,9 @@ export class DashboardComponent implements OnInit {
         this.rowData = data;
         this.buildColumnDefs(data);
         this.isLoading = false;
+        if (data.length === 0) {
+          this.snackBar.open('Collection is empty — try syncing first', 'OK', { duration: 3000 });
+        }
       },
       error: () => {
         this.isLoading = false;
@@ -137,6 +140,7 @@ export class DashboardComponent implements OnInit {
       return;
     }
 
+    // Sample first 10 records to catch all possible fields
     const keys = new Set<string>();
     data.slice(0, 10).forEach(record => {
       Object.keys(record).forEach(k => keys.add(k));
