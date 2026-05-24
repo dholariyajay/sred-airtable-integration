@@ -1,0 +1,14 @@
+<h2 mat-dialog-title>MFA Verification</h2>
+<mat-dialog-content>
+  <p>Enter the 6-digit code from your authenticator app:</p>
+  <mat-form-field appearance="outline" style="width: 100%">
+    <mat-label>MFA Code</mat-label>
+    <input matInput [(ngModel)]="mfaCode" maxlength="6" pattern="[0-9]*"
+           placeholder="000000" autofocus (keyup.enter)="submit()">
+  </mat-form-field>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="dialogRef.close(null)">Cancel</button>
+  <button mat-raised-button color="primary" [disabled]="mfaCode.length < 6"
+          (click)="submit()">Verify</button>
+</mat-dialog-actions>

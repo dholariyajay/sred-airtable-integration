@@ -9,12 +9,14 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatToolbarModule } from '@angular/material/toolbar';
 
 import { AgGridModule } from 'ag-grid-angular';
 import { ColDef, GridApi, GridReadyEvent } from 'ag-grid-community';
 
 import { ApiService } from '../../core/services/api.service';
+import { MfaDialogComponent } from '../mfa-dialog/mfa-dialog.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -24,7 +26,7 @@ import { ApiService } from '../../core/services/api.service';
     MatSelectModule, MatFormFieldModule, MatInputModule,
     MatButtonModule, MatIconModule, MatCardModule,
     MatSnackBarModule, MatProgressSpinnerModule,
-    MatToolbarModule,
+    MatDialogModule, MatToolbarModule,
     AgGridModule
   ],
   templateUrl: './dashboard.component.html',
@@ -54,7 +56,8 @@ export class DashboardComponent implements OnInit {
 
   constructor(
     private api: ApiService,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
@@ -157,6 +160,48 @@ export class DashboardComponent implements OnInit {
   onGridReady(event: GridReadyEvent): void {
     this.gridApi = event.api;
     this.gridApi.sizeColumnsToFit();
+  }
+
+  // --- Scraper ---
+  startScraper(): void {
+    const email = prompt('Airtable email:');
+    const password = prompt('Airtable password:');
+    if (!email || !password) return;
+
+    this.api.scraperLogin(email, password).subscribe({
+      next: (result) => {
+        if (result.status === 'mfa_required') {
+          this.openMfaDialog();
+        } else if (result.status === 'authenticated') {
+          this.snackBar.open('Authenticated! Starting scrape...', 'OK', { duration: 3000 });
+          this.api.startScraping().subscribe();
+        } else {
+          this.snackBar.open('Login failed — check credentials', 'OK', { duration: 5000 });
+        }
+      },
+      error: (err) => this.snackBar.open('Scraper error: ' + err.message, 'OK', { duration: 5000 })
+    });
+  }
+
+  private openMfaDialog(): void {
+    const ref = this.dialog.open(MfaDialogComponent, {
+      width: '350px',
+      disableClose: true
+    });
+
+    ref.afterClosed().subscribe(code => {
+      if (!code) return;
+      this.api.submitMfa(code).subscribe({
+        next: (res) => {
+          if (res.status === 'authenticated') {
+            this.snackBar.open('Authenticated! Starting scrape...', 'OK', { duration: 3000 });
+            this.api.startScraping().subscribe();
+          } else {
+            this.snackBar.open('MFA failed — try again', 'OK', { duration: 3000 });
+          }
+        }
+      });
+    });
   }
 
   private formatHeader(key: string): string {

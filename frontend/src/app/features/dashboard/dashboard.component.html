@@ -23,6 +23,12 @@
       {{ isSyncing ? 'Syncing...' : 'Sync Data' }}
     </button>
 
+    <button mat-raised-button
+            *ngIf="isConnected"
+            (click)="startScraper()">
+      <mat-icon>history</mat-icon> Start Scraper
+    </button>
+
     <span class="connection-status" [class.connected]="isConnected">
       {{ isConnected ? '● Connected' : '○ Not Connected' }}
     </span>
