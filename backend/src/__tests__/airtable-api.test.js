@@ -35,7 +35,7 @@ describe('airtable-api.service', () => {
       expect(users[0].id).toBe('usr_2');
     });
 
-    it('extracts users from collaborator-type field values', () => {
+    it('picks up collaborator field values', () => {
       const records = [{
         id: 'rec1',
         fields: {
@@ -49,7 +49,7 @@ describe('airtable-api.service', () => {
       expect(users[0].email).toBe('carol@test.com');
     });
 
-    it('deduplicates users across multiple records', () => {
+    it('dedupes across records', () => {
       const records = [
         {
           id: 'rec1',
@@ -68,7 +68,7 @@ describe('airtable-api.service', () => {
       expect(users).toHaveLength(1);
     });
 
-    it('merges users from multiple sources', () => {
+    it('gets users from createdBy + lastModifiedBy + field values', () => {
       const records = [
         {
           id: 'rec1',
@@ -85,7 +85,7 @@ describe('airtable-api.service', () => {
       expect(users.map(u => u.id).sort()).toEqual(['usr_1', 'usr_2', 'usr_3']);
     });
 
-    it('handles records with no user info gracefully', () => {
+    it('returns empty for records with no user info', () => {
       const records = [
         { id: 'rec1', fields: { 'Title': 'Test' } },
         { id: 'rec2', fields: {} }
@@ -99,7 +99,7 @@ describe('airtable-api.service', () => {
       expect(extractUsersFromRecords([])).toEqual([]);
     });
 
-    it('uses id as name fallback when name is missing', () => {
+    it('falls back to id when name missing', () => {
       const records = [{
         id: 'rec1',
         createdBy: { id: 'usr_noname' },

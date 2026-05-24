@@ -10,7 +10,6 @@ export class ApiService {
 
   constructor(private http: HttpClient) {}
 
-  // Auth
   getAuthStatus(): Observable<AuthStatus> {
     return this.http.get<AuthStatus>(`${this.baseUrl}/auth/status`);
   }
@@ -19,7 +18,6 @@ export class ApiService {
     return `${this.baseUrl}/auth/connect`;
   }
 
-  // Sync
   startSync(): Observable<any> {
     return this.http.post(`${this.baseUrl}/sync`, {});
   }
@@ -28,7 +26,6 @@ export class ApiService {
     return this.http.get<any>(`${this.baseUrl}/sync/status`);
   }
 
-  // Scraper
   scraperLogin(email: string, password: string): Observable<ScraperLoginResult> {
     return this.http.post<ScraperLoginResult>(`${this.baseUrl}/scraper/login`, { email, password });
   }
@@ -45,7 +42,6 @@ export class ApiService {
     return this.http.post(`${this.baseUrl}/scraper/scrape`, { baseId, tableId });
   }
 
-  // Data — for AG Grid
   getCollections(): Observable<string[]> {
     return this.http.get<string[]>(`${this.baseUrl}/data/collections`);
   }

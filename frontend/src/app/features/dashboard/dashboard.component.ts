@@ -83,8 +83,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.route.queryParams.subscribe(params => {
-      if (params['auth'] === 'success') this.notify.success('Airtable connected successfully');
-      if (params['auth'] === 'failed') this.notify.error('OAuth authorization failed — try again');
+      if (params['auth'] === 'success') this.notify.success('Airtable connected');
+      if (params['auth'] === 'failed') this.notify.error('OAuth failed - try again');
     });
     this.checkConnection();
   }
@@ -111,7 +111,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.isSyncing = true;
     this.api.startSync().subscribe({
       next: () => {
-        this.notify.info('Sync started — this may take a moment');
+        this.notify.info('Sync started...');
         this.pollSyncStatus();
       },
       error: (err) => {
@@ -159,7 +159,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.buildChartOptions(data);
         this.isLoading = false;
         if (data.length === 0) {
-          this.notify.info('Collection is empty — try syncing first');
+          this.notify.info('No data yet - sync first');
         }
       },
       error: () => {
@@ -247,7 +247,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
   }
 
-  // --- Scraper ---
   startScraper(): void {
     const email = prompt('Airtable email:');
     const password = prompt('Airtable password:');
@@ -258,10 +257,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
         if (result.status === 'mfa_required') {
           this.openMfaDialog();
         } else if (result.status === 'authenticated') {
-          this.notify.success('Authenticated! Starting scrape...');
+          this.notify.success('Logged in, starting scrape...');
           this.api.startScraping().subscribe();
         } else {
-          this.notify.error('Login failed — check credentials');
+          this.notify.error('Login failed');
         }
       },
       error: (err) => this.notify.error('Scraper error: ' + err.message)
@@ -279,10 +278,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.api.submitMfa(code).subscribe({
         next: (res) => {
           if (res.status === 'authenticated') {
-            this.notify.success('Authenticated! Starting scrape...');
+            this.notify.success('Logged in, starting scrape...');
             this.api.startScraping().subscribe();
           } else {
-            this.notify.error('MFA failed — try again');
+            this.notify.error('Wrong MFA code, try again');
           }
         }
       });

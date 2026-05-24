@@ -12,7 +12,7 @@ router.post('/sync', async (req, res) => {
   syncInProgress = true;
   res.json({ message: 'Sync started' });
 
-  // Run in background so we don't block the response
+  // fire and forget
   try {
     lastSyncResult = await syncService.runFullSync();
     lastSyncResult.completedAt = new Date();

@@ -3,7 +3,7 @@ const { parseRevisionHtml } = require('../services/html-parser.service');
 describe('html-parser.service', () => {
   const TICKET_ID = 'rec_ABC123';
 
-  describe('parseRevisionHtml — JSON input', () => {
+  describe('JSON input', () => {
     it('parses status changes from JSON object', () => {
       const input = {
         activities: [{
@@ -56,7 +56,7 @@ describe('html-parser.service', () => {
       expect(result[0].newValue).toBe('Bob');
     });
 
-    it('parses JSON string input the same as object', () => {
+    it('works with JSON string too', () => {
       const input = JSON.stringify({
         activities: [{
           id: 'act_003',
@@ -78,7 +78,7 @@ describe('html-parser.service', () => {
       expect(result[0].authoredBy).toBe('usr_z3');
     });
 
-    it('filters out non-status/non-assignee field changes', () => {
+    it('ignores non-status/non-assignee fields', () => {
       const input = {
         activities: [{
           id: 'act_004',
@@ -100,7 +100,7 @@ describe('html-parser.service', () => {
       expect(result.map(r => r.columnType)).toEqual(['status', 'assignee']);
     });
 
-    it('handles alternative JSON structure (rowActivities + action)', () => {
+    it('handles alternate JSON shape (rowActivities + action)', () => {
       const input = {
         rowActivities: [{
           activityId: 'act_005',
@@ -128,7 +128,7 @@ describe('html-parser.service', () => {
       });
     });
 
-    it('handles multiple activities with multiple changes', () => {
+    it('multi-activity + multi-change', () => {
       const input = {
         activities: [
           {
@@ -175,7 +175,7 @@ describe('html-parser.service', () => {
       expect(result[0].uuid).toBe('act_keep');
     });
 
-    it('stringifies object values (name, email, JSON fallback)', () => {
+    it('stringifies object values', () => {
       const input = {
         activities: [{
           id: 'act_obj',
@@ -196,7 +196,7 @@ describe('html-parser.service', () => {
     });
   });
 
-  describe('parseRevisionHtml — HTML input', () => {
+  describe('HTML input', () => {
     it('parses status changes from HTML with data attributes', () => {
       const html = `
         <div data-activity-id="act_html_1" data-user-id="usr_h1" data-timestamp="2024-06-20T12:00:00Z">
@@ -263,7 +263,7 @@ describe('html-parser.service', () => {
     });
   });
 
-  describe('parseRevisionHtml — edge cases', () => {
+  describe('edge cases', () => {
     it('returns empty array for null input', () => {
       expect(parseRevisionHtml(null, TICKET_ID)).toEqual([]);
     });
@@ -280,12 +280,12 @@ describe('html-parser.service', () => {
       expect(parseRevisionHtml({ activities: [] }, TICKET_ID)).toEqual([]);
     });
 
-    it('returns empty array for HTML with no matching selectors', () => {
+    it('empty for unrecognized HTML', () => {
       const html = '<div><p>No revision data here</p></div>';
       expect(parseRevisionHtml(html, TICKET_ID)).toEqual([]);
     });
 
-    it('handles null oldValue/newValue gracefully', () => {
+    it('null values become empty string', () => {
       const input = {
         activities: [{
           id: 'act_null',

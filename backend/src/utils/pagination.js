@@ -5,10 +5,8 @@ function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-/*
- * Airtable returns max 100 records per request — follow offset until exhausted.
- * 250ms delay between requests to stay under the 5 req/sec rate limit.
- */
+// Airtable caps responses at 100 records, so loop with offset token.
+// 250ms delay to stay under 5 req/sec.
 async function fetchAllPaginated(endpoint, token, dataKey, extraParams = {}) {
   let allResults = [];
   let offset = null;

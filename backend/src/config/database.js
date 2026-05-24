@@ -6,18 +6,18 @@ async function connectDatabase() {
 
   try {
     await mongoose.connect(uri);
-    logger.info('Connected to MongoDB');
+    logger.info('db connected');
   } catch (err) {
-    logger.error('MongoDB connection failed:', err.message);
+    logger.error('mongo connection failed:', err.message);
     process.exit(1);
   }
 
   mongoose.connection.on('error', (err) => {
-    logger.error('MongoDB connection error:', err.message);
+    logger.error('mongo error:', err.message);
   });
 
   mongoose.connection.on('disconnected', () => {
-    logger.warn('MongoDB disconnected — attempting reconnect');
+    logger.warn('mongo disconnected');
   });
 }
 

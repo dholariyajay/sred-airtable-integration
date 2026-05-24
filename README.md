@@ -1,13 +1,13 @@
-# Airtable Integration — Full-Stack Assessment
+# Airtable Integration
 
 ## Overview
 
-A full-stack integration with Airtable that covers three areas:
+Full-stack integration with Airtable for a technical assessment. Three main parts:
 
-- **OAuth2 + PKCE authentication** — connects to Airtable's API, stores and auto-refreshes tokens
-- **REST API data sync** — fetches bases, tables, records, and users with proper pagination handling
-- **Custom scraper** — uses Puppeteer to authenticate into Airtable's web UI, extracts session cookies, and pulls revision history from their internal endpoint
-- **Angular dashboard** — AG Grid + AG Charts powered data viewer with dynamic columns, search, filter, sort, and pagination
+- **OAuth2 + PKCE auth** - connects to Airtable's API, auto-refreshes tokens
+- **Data sync** - pulls bases, tables, records, and users with pagination
+- **Puppeteer scraper** - logs into Airtable's web UI, grabs session cookies, fetches revision history from their internal endpoint
+- **Angular dashboard** - AG Grid + AG Charts for viewing synced data
 
 ## Tech Stack
 
@@ -55,7 +55,7 @@ Then start the server:
 npm run dev
 ```
 
-The backend will start on **http://localhost:3000**. You should see `Connected to MongoDB` and `Server running on http://localhost:3000` in the console.
+Backend starts on **http://localhost:3000**.
 
 ### 3. Frontend
 
@@ -65,56 +65,56 @@ npm install
 npm start
 ```
 
-The frontend will start on **http://localhost:4200** and open automatically.
+Opens on **http://localhost:4200**.
 
 ### 4. Verify
 
-- Backend health check: open http://localhost:3000/api/health — should return `{"status":"ok"}`
-- Frontend: open http://localhost:4200 — you should see the dashboard with a "Connect Airtable" button
+- http://localhost:3000/api/health should return `{"status":"ok"}`
+- http://localhost:4200 should show the dashboard
 
 ## Usage
 
-1. Click **Connect Airtable** — redirects to Airtable's OAuth consent screen, then back to the dashboard
-2. Click **Sync Data** — fetches all bases, tables, records, and users from your Airtable account
-3. Select a collection from the **Entity** dropdown — AG Grid populates with dynamic columns from that collection
-4. Use **Search**, column **filters**, and **sorting** to explore the data
-5. Click **Start Scraper** — prompts for Airtable login credentials (+ MFA if enabled), extracts session cookies, and fetches revision history for status/assignee changes
+1. Click **Connect Airtable** to go through OAuth
+2. Click **Sync Data** to pull bases, tables, records, users
+3. Pick a collection from the **Entity** dropdown to load data into the grid
+4. Use search, column filters, sorting to explore
+5. **Start Scraper** prompts for Airtable credentials, handles MFA, then scrapes revision history
 
 ## API Endpoints
 
-| Method | Endpoint | Description |
+| Method | Endpoint | What it does |
 |--------|----------|-------------|
-| GET | `/api/health` | Health check |
-| GET | `/api/auth/connect` | Start OAuth flow |
-| GET | `/api/auth/callback` | OAuth callback |
-| GET | `/api/auth/status` | Check connection status |
-| POST | `/api/sync` | Trigger full data sync |
-| GET | `/api/sync/status` | Sync progress |
-| GET | `/api/data/collections` | List MongoDB collections |
-| GET | `/api/data/collections/:name` | Get collection data (flattened for AG Grid) |
-| POST | `/api/scraper/login` | Start Puppeteer login |
-| POST | `/api/scraper/mfa` | Submit MFA code |
-| GET | `/api/scraper/cookies/status` | Check cookie validity |
-| POST | `/api/scraper/scrape` | Start revision history scrape |
-| GET | `/api/scraper/scrape/status` | Scrape progress |
+| GET | `/api/health` | health check |
+| GET | `/api/auth/connect` | kicks off OAuth flow |
+| GET | `/api/auth/callback` | OAuth redirect handler |
+| GET | `/api/auth/status` | is Airtable connected? |
+| POST | `/api/sync` | trigger full data sync |
+| GET | `/api/sync/status` | sync progress |
+| GET | `/api/data/collections` | list available collections |
+| GET | `/api/data/collections/:name` | collection data (flattened for grid) |
+| POST | `/api/scraper/login` | start Puppeteer login |
+| POST | `/api/scraper/mfa` | submit MFA code |
+| GET | `/api/scraper/cookies/status` | are cookies still valid? |
+| POST | `/api/scraper/scrape` | start revision scrape |
+| GET | `/api/scraper/scrape/status` | scrape progress |
 
-## Architecture Decisions
+## Architecture Notes
 
-I chose **OAuth2 + PKCE** because Airtable deprecated API keys in February 2024. PKCE prevents authorization code interception attacks, which matters even for local development since the callback goes through the browser.
+Airtable deprecated API keys in February 2024, so OAuth2 + PKCE is the only real option. I went with PKCE over the basic flow since the callback goes through the browser anyway.
 
-The **Pages collection is separate** from the other models. The assessment explicitly required this, and it makes sense architecturally since records have dynamic fields that don't fit a fixed schema.
+Records live in a separate `pages` collection because Airtable records have dynamic fields that don't map to a fixed schema. I store the raw `fields` object and flatten it on the way out to AG Grid.
 
-For **pagination**, Airtable returns a maximum of 100 records per request. I implemented an offset-based loop that follows the `offset` token until it's exhausted. There's a 250ms delay between requests to stay under the 5 req/sec rate limit.
+Pagination follows Airtable's offset token pattern (max 100 per request). 250ms delay between pages to stay under 5 req/sec.
 
-I went with **Puppeteer for the scraper** because Airtable's revision history isn't exposed through their public API. The only way to get it is through their internal `/readRowActivitiesAndComments` endpoint, which requires browser session cookies. I considered using Playwright but went with Puppeteer since it has more established patterns for cookie extraction in Node.js environments.
+The scraper uses Puppeteer because revision history isn't in the public API - you have to hit their internal `/readRowActivitiesAndComments` endpoint with browser cookies. Playwright would've worked too but Puppeteer has better docs for cookie extraction.
 
-For **user extraction**, I implemented a fallback approach. The SCIM endpoint requires a Business+ plan, so I first try SCIM, then fall back to extracting user info from `createdBy` and `lastModifiedBy` fields in the records I've already fetched. The `/meta/whoami` endpoint always works and gives us the authenticated user.
+User extraction is a bit hacky: SCIM needs Business+ plan (which I don't have), so I try that first, then fall back to pulling user info out of `createdBy`/`lastModifiedBy` fields from the records I already fetched. `/meta/whoami` always works for the current user.
 
-**Dynamic AG Grid columns** are generated at runtime from the actual data keys rather than being hardcoded. This handles the fact that different Airtable tables have completely different field schemas.
+AG Grid columns are built dynamically from whatever keys the data has, since every Airtable table has different fields.
 
-## Limitations
+## Known Limitations
 
-- The HTML parser selectors for revision history may need adjustment based on Airtable's current UI structure — their internal endpoints are undocumented and can change without notice
-- The scraper stores cookies in MongoDB as a single session document. In a multi-user production setup, you'd want per-user cookie storage
-- Rate limiting is handled with simple delays rather than a proper token bucket. Works fine for single-user assessment use
-- The sync runs records one-by-one with `findOneAndUpdate`. For large datasets, bulk operations would be significantly faster
+- HTML parser selectors for revision history may break if Airtable changes their markup (their internal endpoints are undocumented)
+- Single scraper session stored in MongoDB - would need per-user sessions for multi-user
+- Rate limiting is just `setTimeout` delays, not a proper token bucket
+- Records sync one-by-one with `findOneAndUpdate` - should be bulk ops for large datasets

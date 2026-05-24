@@ -33,7 +33,7 @@ async function initiateLogin(email, password) {
   try {
     await activePage.waitForNavigation({ timeout: 10000, waitUntil: 'networkidle2' });
   } catch {
-    // MFA pages don't always trigger a full navigation
+    // mfa pages sometimes don't fully navigate
   }
 
   const currentUrl = activePage.url();
@@ -47,7 +47,7 @@ async function initiateLogin(email, password) {
                  currentUrl.includes('verify');
 
   if (hasMfa) {
-    return { status: 'mfa_required', message: 'Please enter your MFA code' };
+    return { status: 'mfa_required', message: 'MFA code needed' };
   }
 
   if (currentUrl.includes('airtable.com') && !currentUrl.includes('login')) {
@@ -55,17 +55,17 @@ async function initiateLogin(email, password) {
     return { status: 'authenticated', cookieCount: cookies.length };
   }
 
-  return { status: 'login_failed', message: 'Could not authenticate — check credentials' };
+  return { status: 'login_failed', message: 'Login failed - check credentials' };
 }
 
 async function submitMfaCode(mfaCode) {
   if (!activePage) {
-    throw new Error('No active login session. Start login first.');
+    throw new Error('No active login session - call /login first');
   }
 
   const mfaInput = await activePage.$('input[name="code"], input[type="text"], input[inputmode="numeric"]');
   if (!mfaInput) {
-    throw new Error('MFA input field not found on page');
+    throw new Error('MFA input not found on page');
   }
 
   await mfaInput.type(mfaCode, { delay: 50 });
@@ -76,12 +76,12 @@ async function submitMfaCode(mfaCode) {
   try {
     await activePage.waitForNavigation({ timeout: 15000, waitUntil: 'networkidle2' });
   } catch {
-    // manual check below
+    // check below
   }
 
   const currentUrl = activePage.url();
   if (currentUrl.includes('login') || currentUrl.includes('verify')) {
-    return { status: 'mfa_failed', message: 'MFA verification failed — try again' };
+    return { status: 'mfa_failed', message: 'MFA failed, try again' };
   }
 
   const cookies = await extractAndStoreCookies();
@@ -151,7 +151,7 @@ async function validateCookies() {
 async function getCookieString() {
   const session = await ScraperSession.findOne({});
   if (!session || !session.isValid) {
-    throw new Error('No valid cookies. Please re-authenticate via the scraper.');
+    throw new Error('No valid cookies - need to re-authenticate');
   }
   return session.cookies.map(c => `${c.name}=${c.value}`).join('; ');
 }

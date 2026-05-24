@@ -19,7 +19,7 @@ router.get('/collections/:name', async (req, res) => {
     const { name } = req.params;
     const db = mongoose.connection.db;
 
-    // Verify collection exists
+    // check it exists first
     const existing = await db.listCollections({ name }).toArray();
     if (existing.length === 0) {
       return res.status(404).json({ error: `Collection "${name}" not found` });
@@ -27,12 +27,12 @@ router.get('/collections/:name', async (req, res) => {
 
     const documents = await db.collection(name).find({}).limit(10000).toArray();
 
-    // Flatten for AG Grid — _id to string, nested fields to top-level keys
+    // flatten nested fields so AG Grid gets flat column keys
     const flattened = documents.map(doc => {
       const flat = { ...doc };
       if (flat._id) flat._id = flat._id.toString();
 
-      // Flatten nested 'fields' object so each field becomes a column in AG Grid
+      // airtable stores record data in a nested 'fields' obj, pull those up
       if (flat.fields && typeof flat.fields === 'object') {
         Object.entries(flat.fields).forEach(([key, value]) => {
           if (Array.isArray(value)) {

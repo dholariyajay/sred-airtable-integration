@@ -17,7 +17,7 @@ async function scrapeAllRevisionHistory(options = {}) {
 
   const cookieCheck = await scraperService.validateCookies();
   if (!cookieCheck.valid) {
-    throw new Error(`Cookies are invalid: ${cookieCheck.reason}. Please re-authenticate.`);
+    throw new Error(`Cookies invalid (${cookieCheck.reason}) - re-authenticate first`);
   }
 
   const filter = {};
@@ -52,18 +52,17 @@ async function scrapeAllRevisionHistory(options = {}) {
 
       stats.processed++;
 
-      // Log progress every 10 records
       if ((i + 1) % 10 === 0 || i === pages.length - 1) {
         logger.info(`Progress: ${i + 1}/${pages.length} pages, ${stats.changesFound} changes found`);
       }
 
       await delay(300);
 
-      // Re-validate cookies every 50 requests to catch expiry early
+      // re-check cookies periodically so we don't waste time on a dead session
       if ((i + 1) % 50 === 0) {
         const recheck = await scraperService.validateCookies();
         if (!recheck.valid) {
-          logger.error('Cookies expired mid-scrape — stopping gracefully');
+          logger.error('cookies expired mid-scrape, stopping');
           stats.errors++;
           return { ...stats, stoppedReason: 'cookies_expired' };
         }
@@ -74,7 +73,7 @@ async function scrapeAllRevisionHistory(options = {}) {
       stats.errors++;
 
       if (err.response && [401, 403].includes(err.response.status)) {
-        logger.error('Auth failed during scrape — stopping');
+        logger.error('auth error during scrape, bailing out');
         return { ...stats, stoppedReason: 'cookies_expired' };
       }
     }

@@ -10,7 +10,7 @@ async function fetchBases(token) {
   );
 }
 
-// No pagination needed for tables — returns everything in one shot
+// tables endpoint returns all at once, but reusing paginated fetch is simpler
 async function fetchTables(token, baseId) {
   logger.info(`Fetching tables for base ${baseId}`);
   return await fetchAllPaginated(
@@ -25,19 +25,13 @@ async function fetchRecords(token, baseId, tableId) {
   );
 }
 
-/**
- * Users are tricky — Airtable's user endpoints vary by plan:
- *   - SCIM requires Business+ plan
- *   - Enterprise endpoint needs enterprise account
- *   - /meta/whoami works on all plans but only returns current user
- *
- * I try SCIM first, fall back to whoami + record metadata extraction.
- */
+// Airtable has no single user-list endpoint that works on all plans.
+// SCIM needs Business+, so try that but fall back to whoami + record metadata.
 async function fetchUsers(token) {
   logger.info('Fetching users...');
   const users = [];
 
-  // Always get the current authenticated user
+  // whoami always works regardless of plan
   try {
     const whoami = await axios.get(`${AIRTABLE_API_BASE}/meta/whoami`, {
       headers: { Authorization: `Bearer ${token}` }
@@ -52,7 +46,7 @@ async function fetchUsers(token) {
     logger.warn('whoami failed:', err.message);
   }
 
-  // SCIM requires Business+ plan, so this will 403 on free/pro plans
+  // SCIM needs Business+, will 403 on free/pro
   try {
     const scimResponse = await axios.get('https://airtable.com/scim/v2/Users', {
       headers: { Authorization: `Bearer ${token}` },
@@ -69,7 +63,7 @@ async function fetchUsers(token) {
       }
     }
   } catch {
-    logger.info('SCIM not available on this plan — will extract users from record metadata');
+    logger.info('SCIM not available (probably free/pro plan), using record metadata instead');
   }
 
   return users;

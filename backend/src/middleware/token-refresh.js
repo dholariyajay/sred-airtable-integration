@@ -1,6 +1,6 @@
 const oauthService = require('../services/oauth.service');
 
-// Middleware that ensures a valid token exists before hitting Airtable routes
+// bail early if we don't have a valid token
 async function ensureValidToken(req, res, next) {
   try {
     req.airtableToken = await oauthService.getValidToken();

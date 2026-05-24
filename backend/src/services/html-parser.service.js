@@ -1,10 +1,7 @@
 const cheerio = require('cheerio');
 
-/*
- * Parses Airtable revision history into structured documents.
- * The internal endpoint can return JSON or HTML depending on the version,
- * so we handle both. Only status and assignee changes are kept.
- */
+// The revision endpoint sometimes returns JSON, sometimes HTML, so handle both.
+// We only care about status and assignee changes.
 function parseRevisionHtml(htmlOrJson, ticketId) {
   if (htmlOrJson && typeof htmlOrJson === 'object') {
     return parseJsonResponse(htmlOrJson, ticketId);

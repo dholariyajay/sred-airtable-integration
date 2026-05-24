@@ -1,6 +1,6 @@
 const { RATE_LIMIT_DELAY_MS } = require('../config/constants');
 
-// Simple in-memory rate limiter for Airtable API (5 req/sec per base)
+// crude rate limiter to stay under Airtable's 5 req/sec
 let lastRequestTime = 0;
 
 async function rateLimiter(req, res, next) {

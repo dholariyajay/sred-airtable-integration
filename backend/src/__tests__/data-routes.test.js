@@ -40,7 +40,7 @@ describe('data routes', () => {
   const db = mongoose.connection.db;
 
   describe('GET /api/data/collections', () => {
-    it('returns filtered collection names', async () => {
+    it('filters out internal collections', async () => {
       db.listCollections.mockReturnValue({
         toArray: () => Promise.resolve([
           { name: 'bases' },
@@ -69,7 +69,7 @@ describe('data routes', () => {
   });
 
   describe('GET /api/data/collections/:name', () => {
-    it('returns 404 for non-existent collection', async () => {
+    it('404 for missing collection', async () => {
       db.listCollections.mockReturnValue({
         toArray: () => Promise.resolve([])
       });
@@ -84,7 +84,7 @@ describe('data routes', () => {
       server.close();
     });
 
-    it('flattens nested fields object for AG Grid consumption', async () => {
+    it('flattens fields for grid', async () => {
       db.listCollections.mockImplementation(({ name }) => ({
         toArray: () => Promise.resolve(name === 'pages' ? [{ name: 'pages' }] : [])
       }));

@@ -6,7 +6,7 @@ jest.mock('axios');
 describe('pagination utility', () => {
   afterEach(() => jest.clearAllMocks());
 
-  it('fetches a single page when no offset is returned', async () => {
+  it('single page (no offset)', async () => {
     axios.get.mockResolvedValueOnce({
       data: { records: [{ id: 'r1' }, { id: 'r2' }] }
     });
@@ -23,7 +23,7 @@ describe('pagination utility', () => {
     );
   });
 
-  it('follows offset across multiple pages', async () => {
+  it('follows offset across pages', async () => {
     axios.get
       .mockResolvedValueOnce({
         data: { records: [{ id: 'r1' }], offset: 'page2' }
@@ -45,14 +45,14 @@ describe('pagination utility', () => {
     expect(secondCallParams.offset).toBe('page2');
   });
 
-  it('returns empty array when data key is missing', async () => {
+  it('empty when key missing from response', async () => {
     axios.get.mockResolvedValueOnce({ data: {} });
 
     const result = await fetchAllPaginated('https://api.airtable.com/v0/test', 'tok', 'bases');
     expect(result).toEqual([]);
   });
 
-  it('passes extra params through to each request', async () => {
+  it('passes extra params through', async () => {
     axios.get.mockResolvedValueOnce({
       data: { records: [{ id: 'r1' }] }
     });
@@ -72,7 +72,7 @@ describe('pagination utility', () => {
     expect(axios.get.mock.calls[0][0]).toContain('https://api.airtable.com/v0/meta/bases');
   });
 
-  it('propagates API errors', async () => {
+  it('throws on API error', async () => {
     axios.get.mockRejectedValueOnce(new Error('rate limited'));
 
     await expect(

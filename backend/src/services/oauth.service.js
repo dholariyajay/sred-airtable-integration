@@ -5,7 +5,7 @@ const OAuthToken = require('../models/OAuthToken');
 const { AIRTABLE_AUTH_URL, AIRTABLE_TOKEN_URL, OAUTH_SCOPES, TOKEN_REFRESH_BUFFER_MS } = require('../config/constants');
 const logger = require('../utils/logger');
 
-// In-memory store for PKCE verifiers keyed by state
+// keyed by state param, cleaned up after exchange
 let pendingAuth = {};
 
 function getAuthorizationUrl() {
@@ -25,7 +25,7 @@ function getAuthorizationUrl() {
     code_challenge_method: 'S256'
   });
 
-  // URLSearchParams encodes spaces as '+', but Airtable needs '%20'
+  // Airtable rejects '+' for spaces, needs '%20'
   const url = `${AIRTABLE_AUTH_URL}?${params.toString().replace(/\+/g, '%20')}`;
   logger.debug('Auth URL:', url);
 
@@ -42,7 +42,7 @@ async function exchangeCodeForTokens(code, state) {
     `${process.env.AIRTABLE_CLIENT_ID}:${process.env.AIRTABLE_CLIENT_SECRET}`
   ).toString('base64');
 
-  // Airtable token endpoint requires form-urlencoded, not JSON
+  // has to be form-urlencoded, not JSON
   const body = new URLSearchParams({
     grant_type: 'authorization_code',
     code,
@@ -72,7 +72,7 @@ async function exchangeCodeForTokens(code, state) {
   );
 
   delete pendingAuth[state];
-  logger.info('OAuth tokens stored successfully');
+  logger.info('tokens stored');
 
   return { success: true };
 }
@@ -80,10 +80,10 @@ async function exchangeCodeForTokens(code, state) {
 async function getValidToken() {
   const tokenDoc = await OAuthToken.findOne({});
   if (!tokenDoc) {
-    throw new Error('No OAuth token found. Please connect Airtable first.');
+    throw new Error('Not connected - go through OAuth flow first');
   }
 
-  // Refresh if expired or about to expire
+  // refresh early to avoid mid-request expiry
   if (tokenDoc.expiresAt <= new Date(Date.now() + TOKEN_REFRESH_BUFFER_MS)) {
     return await refreshAccessToken(tokenDoc);
   }
@@ -117,13 +117,13 @@ async function refreshAccessToken(tokenDoc) {
     tokenDoc.updatedAt = new Date();
     await tokenDoc.save();
 
-    logger.info('Token refreshed successfully');
+    logger.info('token refreshed');
     return access_token;
   } catch (err) {
-    /* If refresh fails, token is dead — user needs to reconnect */
+    /* refresh failed, token is dead */
     logger.error('Token refresh failed:', err.message);
     await OAuthToken.deleteMany({});
-    throw new Error('Token refresh failed. Please reconnect Airtable.');
+    throw new Error('Refresh token expired, need to reconnect');
   }
 }
 

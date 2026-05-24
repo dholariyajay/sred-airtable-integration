@@ -11,8 +11,7 @@ async function runFullSync() {
   const token = await oauthService.getValidToken();
   const stats = { bases: 0, tables: 0, pages: 0, users: 0, errors: [] };
 
-  // --- Bases ---
-  logger.info('=== SYNCING BASES ===');
+  logger.info('syncing bases...');
   const bases = await airtableApi.fetchBases(token);
 
   for (const base of bases) {
@@ -30,8 +29,7 @@ async function runFullSync() {
   }
   logger.info(`Synced ${stats.bases} bases`);
 
-  // --- Tables + Records ---
-  logger.info('=== SYNCING TABLES ===');
+  logger.info('syncing tables + records...');
   let allRecords = [];
 
   for (const base of bases) {
@@ -62,8 +60,7 @@ async function runFullSync() {
         );
         stats.tables++;
 
-        // Fetch all records with pagination
-        console.log(`\n--- Fetching records for "${table.name}" ---`);
+        console.log(`fetching records for "${table.name}"...`);
         try {
           const records = await airtableApi.fetchRecords(token, base.id, table.id);
 
@@ -99,12 +96,11 @@ async function runFullSync() {
     }
   }
 
-  // --- Users ---
-  logger.info('=== SYNCING USERS ===');
+  logger.info('syncing users...');
   const apiUsers = await airtableApi.fetchUsers(token);
   const recordUsers = airtableApi.extractUsersFromRecords(allRecords);
 
-  // Merge — API users take priority over record-extracted ones
+  // merge - api users win over record-extracted ones
   const userMap = new Map();
   recordUsers.forEach(u => userMap.set(u.id, u));
   apiUsers.forEach(u => userMap.set(u.id, u));
@@ -124,7 +120,7 @@ async function runFullSync() {
   }
   logger.info(`Synced ${stats.users} users`);
 
-  logger.info('=== SYNC COMPLETE ===');
+  logger.info('sync done');
   return stats;
 }
 
