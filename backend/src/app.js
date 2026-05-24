@@ -5,6 +5,8 @@ require('dotenv').config();
 
 const { connectDatabase } = require('./config/database');
 const errorHandler = require('./middleware/error-handler');
+const ensureValidToken = require('./middleware/token-refresh');
+const rateLimiter = require('./middleware/rate-limiter');
 const logger = require('./utils/logger');
 
 const authRoutes = require('./routes/auth.routes');
@@ -26,9 +28,9 @@ app.use(session({
 }));
 
 app.use('/api/auth', authRoutes);
-app.use('/api', syncRoutes);
+app.use('/api', ensureValidToken, rateLimiter, syncRoutes);
 app.use('/api/scraper', scraperRoutes);
-app.use('/api/data', dataRoutes);
+app.use('/api/data', ensureValidToken, dataRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

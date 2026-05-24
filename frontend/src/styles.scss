@@ -7,3 +7,6 @@ body {
   font-family: Roboto, "Helvetica Neue", sans-serif;
   background-color: #fafafa;
 }
+
+.snack-success .mdc-snackbar__surface { background-color: #2e7d32 !important; }
+.snack-error .mdc-snackbar__surface { background-color: #c62828 !important; }

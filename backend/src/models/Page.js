@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-// Separate collection — the assessment explicitly requires this
+// Separate collection since record fields vary per table and don't fit a fixed schema
 const pageSchema = new mongoose.Schema({
   airtableRecordId: { type: String, required: true, index: true },
   baseId:           { type: String, required: true, index: true },

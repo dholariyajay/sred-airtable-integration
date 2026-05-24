@@ -34,8 +34,9 @@ function parseJsonResponse(data, ticketId) {
       const columnType = normalizeColumnType(fc.fieldName || fc.columnName || '');
 
       if (columnType === 'status' || columnType === 'assignee') {
+        const actId = activity.id || activity.activityId || generateId();
         changes.push({
-          uuid: activity.id || activity.activityId || generateId(),
+          uuid: `${actId}-${columnType}`,
           issueId: ticketId,
           columnType,
           oldValue: stringifyValue(fc.oldValue || fc.previousValue),
@@ -69,7 +70,7 @@ function parseHtmlResponse(html, ticketId) {
       if (columnType !== 'status' && columnType !== 'assignee') return;
 
       changes.push({
-        uuid: activityId,
+        uuid: `${activityId}-${columnType}`,
         issueId: ticketId,
         columnType,
         oldValue: $change.find('.old-value, .previous-value').text().trim(),
@@ -96,6 +97,6 @@ function stringifyValue(val) {
   return String(val);
 }
 
-const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+const generateId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 
 module.exports = { parseRevisionHtml };

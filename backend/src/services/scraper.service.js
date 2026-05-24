@@ -22,7 +22,6 @@ async function initiateLogin(email, password) {
 
   await activePage.goto('https://airtable.com/login', { waitUntil: 'networkidle2' });
 
-  // Fill credentials
   await activePage.waitForSelector('input[name="email"], input[type="email"]', { timeout: 10000 });
   await activePage.type('input[name="email"], input[type="email"]', email, { delay: 50 });
 
@@ -40,7 +39,7 @@ async function initiateLogin(email, password) {
   const currentUrl = activePage.url();
   const pageContent = await activePage.content();
 
-  // Detect MFA prompt
+  // TODO: replace string matching with a more reliable MFA detection approach
   const hasMfa = pageContent.includes('verification') ||
                  pageContent.includes('two-factor') ||
                  pageContent.includes('mfa') ||
@@ -107,7 +106,6 @@ async function extractAndStoreCookies() {
     { upsert: true }
   );
 
-  // Done with the browser
   if (activeBrowser) {
     await activeBrowser.close().catch(() => {});
     activeBrowser = null;
